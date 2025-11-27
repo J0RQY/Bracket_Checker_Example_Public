@@ -1,0 +1,59 @@
+name: .NET CI Build and Test
+
+# This workflow is triggered on every push to the main branch
+# and on all pull requests targeting the main branch.
+# It can also be triggered manually using workflow_dispatch.
+on:
+  push:
+    branches: [ main ]
+
+# The 'build-and-test' job handles the core CI steps
+jobs:
+  build-and-test:
+    # Use the latest Ubuntu runner, which is common and fast for .NET projects
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Check out the repository code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # Step 2: Set up the .NET 8 SDK
+    # The actions/setup-dotnet action ensures the correct version is available on the runner
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' # Use the latest patch version of the 8.0 SDK
+
+    # Step 3: Restore NuGet dependencies
+    # This is a critical first step to download all necessary packages
+    - name: Restore Dependencies
+      run: dotnet restore
+
+    # Step 4: Build the entire solution
+    # The --no-restore flag tells the build process to use the packages restored in the previous step
+    # We use Release configuration for a formal CI build
+    - name: Build Project
+      # The command below runs `dotnet build` from the repository root, which will find your .csproj file there.
+      run: dotnet build --configuration Release --no-restore
+
+    # Step 5: Run Tests
+    # This command automatically finds and runs all projects that contain tests (usually suffixed with .Tests)
+    # --no-build prevents rebuilding. --verbosity minimal keeps the log output clean.
+    - name: Run Tests
+      # The command below runs `dotnet test` from the repository root, which will find your test projects.
+      run: dotnet test --configuration Release --no-build --verbosity minimal
+      
+    # Optional Step 6: Package the results (e.g., if you want to publish the compiled artifact)
+    # This is conditional: only runs on push events to the 'main' branch.
+    - name: Publish Build Artifacts (Optional)
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: dotnet publish --configuration Release --no-build -o ${{ github.workspace }}/publish
+      
+    # Optional Step 7: Upload the packaged artifacts for later use (e.g., deployment)
+    - name: Upload Build Artifacts (Optional)
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dotnet-app-release
+        path: ${{ github.workspace }}/publish
