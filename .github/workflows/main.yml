@@ -23,8 +23,8 @@ jobs:
       run: dotnet restore
 
     - name: Build Project
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build
 
     - name: Run Tests
-      run: dotnet test --configuration Release --no-build --verbosity minimal
+      run: dotnet test
   
