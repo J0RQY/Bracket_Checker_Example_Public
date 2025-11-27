@@ -24,6 +24,6 @@ public class BracketCheckerTest
     public void TestCheckSuccessSHouldFail()
     {
         var result = BracketChecker.Check(")hello()(");
-        Assert.IsFalse(result);
+        Assert.IsTrue(result);
     }
 }
